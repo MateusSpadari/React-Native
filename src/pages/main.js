@@ -8,6 +8,10 @@ export default class Main extends Component {
         title: "Mateus Spadari",
     };
 
+    state = {
+        docs: []
+    }
+
     componentDidMount() {
         this.loadProducts();
     }
@@ -17,12 +21,16 @@ export default class Main extends Component {
 
         const { docs } = response.data;
         console.log('DOCS: ', docs);
+        this.setState({ docs });
     }
 
     render() {
-        return(
+        return (
             <View>
-                <Text>Hello World !</Text>
+                <Text>Hello World ! {this.state.counter} </Text>
+                {this.state.docs.map(products => (
+                    <Text key={products._id}>{products.title}</Text>
+                ))}
             </View>
         );
     }
