@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import api from '../services/api';
 
 export default class Main extends Component {
@@ -9,29 +9,114 @@ export default class Main extends Component {
     };
 
     state = {
-        docs: []
-    }
+        productsInfo: {},
+        docs: [],
+        page: 1
+    };
 
     componentDidMount() {
         this.loadProducts();
+    };
+
+    loadProducts = async (page = 1) => {
+        const response = await api.get(`/products?page=${page}`);
+        const { docs, ...productsInfo } = response.data;
+
+        this.setState({
+            docs: [...this.state.docs, ...docs],
+            productsInfo,
+            page
+        });
+    };
+
+    loadMore = () => {
+        const { page, productsInfo } = this.state;
+
+        if (page == productsInfo.pages) return;
+
+        const pageNumber = page + 1;
+        this.loadProducts(pageNumber);
     }
 
-    loadProducts = async () => {
-        const response = await api.get('/products');
+    renderItem = ({ item }) => (
+        <View style={styles.productContainer}>
+            <Text style={styles.productTitle}>{item.title}</Text>
+            <Text style={styles.productDescription}>{item.description}</Text>
 
-        const { docs } = response.data;
-        console.log('DOCS: ', docs);
-        this.setState({ docs });
-    }
+            <TouchableOpacity
+                style={styles.productButton}
+                onPress={() => {
+                    this.props.navigation.navigate('Product', { product: item });
+                }}>
+                <Text style={styles.productButtonText}>Acessar</Text>
+            </TouchableOpacity>
+        </View>
+    );
 
     render() {
         return (
-            <View>
-                <Text>Hello World ! {this.state.counter} </Text>
-                {this.state.docs.map(products => (
-                    <Text key={products._id}>{products.title}</Text>
-                ))}
+            <View style={styles.container}>
+                <FlatList
+                    contentContainerStyle={styles.list}
+                    data={this.state.docs}
+                    keyExtractor={item => item._id}
+                    renderItem={this.renderItem}
+                    onEndReached={this.loadMore}
+                    onEndReachedThreshold={0.1}
+                />
             </View>
         );
     }
 }
+
+const styles = StyleSheet.create({
+
+    container: {
+        flex: 1,
+        backgroundColor: '#fafafa',
+    },
+
+    list: {
+        padding: 20
+    },
+
+    productContainer: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#DDD',
+        borderRadius: 5,
+        padding: 20,
+        marginBottom: 20
+    },
+
+    productTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333'
+    },
+
+    productDescription: {
+        fontSize: 16,
+        color: '#999',
+        marginTop: 5,
+        lineHeight: 24
+    },
+
+    productButton: {
+        height: 42,
+        borderWidth: 2,
+        borderColor: '#2980b9',
+        borderRadius: 5,
+        backgroundColor: 'transparent',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10
+    },
+
+    productButtonText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2980b9'
+    }
+
+});
